@@ -19,6 +19,7 @@ const App: React.FC = () => {
     title: string;
     description: string;
     isComplete: boolean;
+    todos: Todo[];
   }
 
   const baseUrl = 'https://todo-caio.azurewebsites.net/api/';
@@ -28,6 +29,8 @@ const App: React.FC = () => {
   const [targetId, setTargetId] = useState<number>(0);
   const [newTarget, setNewTarget] = useState({ title: '', description: '' });
   const [newTodo, setNewTodo] = useState({ title: '', description: '', targetId: 0 });
+
+  
 
   const requestBase = axios.create({
     baseURL: baseUrl,
@@ -97,8 +100,41 @@ const App: React.FC = () => {
     } catch (error) {
       console.error('Erro ao deletar o todo:', error);
     }
-  };
 
+    
+  };
+  const putComplete = async (id: number, newStatus: boolean) => {
+    try {
+      // Encontra o target atual na lista para pegar seus dados completos
+      const targetToUpdate = targets.find(target => target.id === id);
+      
+      if (!targetToUpdate) {
+        console.error('Target não encontrado');
+        return;
+      }
+  
+      // Constrói o objeto para enviar no PUT, incluindo o campo 'todo'
+      const updatedTarget = {
+        id: targetToUpdate.id,
+        title: targetToUpdate.title,
+        isComplete: newStatus, // Atualiza apenas o campo isComplete
+        description: targetToUpdate.description,
+        todo: targetToUpdate.todos ? targetToUpdate.todos : []
+      };
+  
+      // Faz uma requisição PUT para atualizar o Target
+      await requestBase.put(`targets/${id}`, updatedTarget);
+      
+      console.log(`Target ${id} atualizado para ${newStatus ? 'Completo' : 'Incompleto'}`);
+      
+      // Atualiza os dados chamando getData novamente
+      getData();
+    } catch (error) {
+      console.error('Erro ao atualizar o status do target:', error);
+    }
+  };
+  
+  
   return (
     <div className="App">
       <header className="App-header">
@@ -150,6 +186,14 @@ const App: React.FC = () => {
           <div key={target.id}>
             <h3>{target.title}</h3>
             <p>{target.description}</p>
+            <label>
+            <p>{target.isComplete ? 'Completo' : 'Incompleto'}</p>
+              <input
+                type="checkbox"
+                checked={target.isComplete} // Define se a checkbox está marcada ou não
+                onChange={() => putComplete(target.id, !target.isComplete)} // Altera o estado quando clicada
+              />
+            </label>
             <button onClick={() => deleteTarget(target.id)}>Deletar Target</button>
           </div>
         ))}
@@ -159,6 +203,7 @@ const App: React.FC = () => {
           <div key={todo.id}>
             <h3>{todo.title}</h3>
             <p>{todo.description}</p>
+            <p>{todo.isComplete ? 'Completo' : 'Incompleto'}</p>
             <button onClick={() => deleteTodo(todo.id)}>Deletar Todo</button>
           </div>
         ))}
