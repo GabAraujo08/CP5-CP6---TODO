@@ -25,8 +25,7 @@ const App: React.FC = () => {
   const baseUrl = "https://todo-caio.azurewebsites.net/api/";
   const [targets, setTargets] = useState<Target[]>([]);
   const [todos, setTodos] = useState<Todo[]>([]);
-  const [todoId, setTodoId] = useState<number>(0);
-  const [targetId, setTargetId] = useState<number>(0);
+  const [targetToEdit, setTargetToEdit] = useState<Target | null>(null); // Estado para armazenar o target a ser editado
   const [newTarget, setNewTarget] = useState({ title: "", description: "" });
   const [newTodo, setNewTodo] = useState({
     title: "",
@@ -111,37 +110,27 @@ const App: React.FC = () => {
       console.error("Erro ao deletar o todo:", error);
     }
   };
-  const putComplete = async (id: number, newStatus: boolean) => {
-    try {
-      // Encontra o target atual na lista para pegar seus dados completos
-      const targetToUpdate = targets.find((target) => target.id === id);
 
-      if (!targetToUpdate) {
-        console.error("Target não encontrado");
-        return;
+  const updateTarget = async () => {
+    if (targetToEdit) {
+      try {
+        // Enviar uma requisição PUT para atualizar o target
+        await requestBase.put(`targets/${targetToEdit.id}`, {
+          title: targetToEdit.title,
+          description: targetToEdit.description,
+          isComplete: targetToEdit.isComplete,
+        });
+        console.log(`Target ${targetToEdit.id} atualizado com sucesso.`);
+        getData(); // Atualizar os dados após a edição
+        setTargetToEdit(null); // Limpar o formulário após o update
+      } catch (error) {
+        console.error("Erro ao atualizar o target:", error);
       }
-
-      // Constrói o objeto para enviar no PUT, incluindo o campo 'todo'
-      const updatedTarget = {
-        id: targetToUpdate.id,
-        title: targetToUpdate.title,
-        isComplete: newStatus, // Atualiza apenas o campo isComplete
-        description: targetToUpdate.description,
-        todo: targetToUpdate.todos ? targetToUpdate.todos : [],
-      };
-
-      // Faz uma requisição PUT para atualizar o Target
-      await requestBase.put(`targets/${id}`, updatedTarget);
-
-      console.log(
-        `Target ${id} atualizado para ${newStatus ? "Completo" : "Incompleto"}`
-      );
-
-      // Atualiza os dados chamando getData novamente
-      getData();
-    } catch (error) {
-      console.error("Erro ao atualizar o status do target:", error);
     }
+  };
+
+  const handleEditClick = (target: Target) => {
+    setTargetToEdit(target); // Definir o target a ser editado
   };
 
   return (
@@ -200,14 +189,6 @@ const App: React.FC = () => {
                 </option>
               ))}
             </select>
-            {/* <input
-            type="number"
-            placeholder="Target ID"
-            value={newTodo.targetId}
-            onChange={(e) =>
-              setNewTodo({ ...newTodo, targetId: Number(e.target.value) })
-            }
-          /> */}
             <button onClick={postTodo}>Criar tarefa</button>
           </div>
         </div>
@@ -220,7 +201,7 @@ const App: React.FC = () => {
                 <div>
                   <h3>{target.description}</h3>
                   {todos
-                    .filter((todo) => todo.targetId === target.id) //</div> Filtra os todos pelo ta
+                    .filter((todo) => todo.targetId === target.id)
                     .map((todo) => (
                       <div className="todosDiv" key={todo.id}>
                         <h4>{todo.title}</h4>
@@ -231,20 +212,100 @@ const App: React.FC = () => {
                         </button>
                       </div>
                     ))}
-                  {/* Caso o target não tenha todos */}
                   {todos.filter((todo) => todo.targetId === target.id)
                     .length === 0 && (
                     <p>Não há todos relacionados a este target.</p>
                   )}
                 </div>
-                <button onClick={() => deleteTarget(target.id)}>
+                <button
+                  style={{ marginTop: "10px" }}
+                  onClick={() => deleteTarget(target.id)}
+                >
                   Deletar Target
+                </button>
+                <button
+                  style={{ marginTop: "10px" }}
+                  data-bs-toggle="modal"
+                  data-bs-target="#editModal"
+                  onClick={() => handleEditClick(target)}
+                >
+                  Atualizar Target
                 </button>
               </div>
             </div>
           ))}
         </div>
       </header>
+
+      {/* Modal para editar target */}
+      <div
+        className="modal fade"
+        id="editModal"
+        tabIndex={-1}
+        aria-labelledby="editModalLabel"
+        aria-hidden="true"
+      >
+        <div className="modal-dialog">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h1 className="modal-title fs-5" id="editModalLabel">
+                Editar Target
+              </h1>
+              <button
+                type="button"
+                className="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              ></button>
+            </div>
+            <div className="modal-body">
+              {targetToEdit && (
+                <div>
+                  <input
+                    type="text"
+                    value={targetToEdit.title}
+                    onChange={(e) =>
+                      setTargetToEdit({
+                        ...targetToEdit,
+                        title: e.target.value,
+                      })
+                    }
+                    placeholder="Editar título do Target"
+                  />
+                  <input
+                    type="text"
+                    value={targetToEdit.description}
+                    onChange={(e) =>
+                      setTargetToEdit({
+                        ...targetToEdit,
+                        description: e.target.value,
+                      })
+                    }
+                    placeholder="Editar descrição do Target"
+                  />
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                data-bs-dismiss="modal"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={updateTarget}
+                data-bs-dismiss="modal"
+              >
+                Salvar alterações
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

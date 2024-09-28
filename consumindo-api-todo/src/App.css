@@ -41,20 +41,19 @@
   color: #888;
 }
 
-.App-header{
+.App-header {
   display: flex;
   gap: 50px;
-  
 }
 
-.formTodo, .formTarget{
+.formTodo,
+.formTarget {
   display: flex;
   flex-direction: column;
   gap: 10px;
-
 }
 
-.formTodoETarget{
+.formTodoETarget {
   width: 50%;
 }
 
@@ -68,7 +67,7 @@
  *
  **/
 
-/* SCSS Variables & Mixins */ 
+/* SCSS Variables & Mixins */
 .container {
   width: 500px;
   margin: 0 auto;
@@ -100,12 +99,12 @@
 
 .container .item input[type="checkbox"]:checked + label {
   background-color: #00c255;
-  color: #FFF;
+  color: #fff;
 }
 
 .container .item input[type="checkbox"]:checked + label:after {
   content: "-";
-  color: #FFF;
+  color: #fff;
 }
 
 .container .item input[type="checkbox"]:checked + label + div {
@@ -118,7 +117,7 @@
   box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
   position: relative;
   padding: 15px;
-  background-color: #FFF;
+  background-color: #fff;
   color: #353535;
   cursor: pointer;
   -webkit-touch-callout: none;
@@ -139,7 +138,7 @@
 
 .container .item label:hover {
   background-color: #00c255;
-  color: #FFF;
+  color: #fff;
   transition: background-color 100ms linear;
 }
 
@@ -147,7 +146,7 @@
   display: none;
   border-top: none;
   padding: 15px;
-  background-color: #FFF;
+  background-color: #fff;
   text-align: left;
 }
 
@@ -161,14 +160,14 @@ body {
 }
 
 body {
-  font-family: 'Open Sans', sans-serif;
+  font-family: "Open Sans", sans-serif;
   font-weight: 300;
   background-color: #f0f0f0;
   margin: 0;
 }
 
 h1 {
-  font-family: 'Indie Flower', sans-serif;
+  font-family: "Indie Flower", sans-serif;
 }
 
 h3 {
@@ -191,10 +190,13 @@ a:hover {
   color: #00c255;
 }
 
-.todosDiv{
-  display: flex!important;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
+.todosDiv {
+  display: flex !important;
+    justify-content: space-between;
+    align-items: center;
+    flex-direction: row;
 }
 
+.todosDiv p, h4 {
+  margin: 0;
+}
