@@ -25,7 +25,8 @@ const App: React.FC = () => {
   const baseUrl = "https://todo-caio.azurewebsites.net/api/";
   const [targets, setTargets] = useState<Target[]>([]);
   const [todos, setTodos] = useState<Todo[]>([]);
-  const [targetToEdit, setTargetToEdit] = useState<Target | null>(null); // Estado para armazenar o target a ser editado
+  const [todoToEdit, setTodoToEdit] = useState<Todo | null>(null);
+  const [targetToEdit, setTargetToEdit] = useState<Target | null>(null);
   const [newTarget, setNewTarget] = useState({ title: "", description: "" });
   const [newTodo, setNewTodo] = useState({
     title: "",
@@ -40,7 +41,6 @@ const App: React.FC = () => {
     },
   });
 
-  // Carregar os dados ao montar o componente
   useEffect(() => {
     getData();
   }, []);
@@ -65,7 +65,7 @@ const App: React.FC = () => {
         isComplete: false,
       });
       console.log("Novo Target criado:", response.data);
-      getData(); // Atualizar os dados após criação
+      getData();
     } catch (error) {
       console.error("Erro na requisição:", error);
     }
@@ -80,7 +80,7 @@ const App: React.FC = () => {
         targetId: newTodo.targetId,
       });
       console.log("Novo Todo criado:", response.data);
-      getData(); // Atualizar os dados após criação
+      getData();
     } catch (error) {
       console.error("Erro na requisição:", error);
     }
@@ -94,7 +94,7 @@ const App: React.FC = () => {
       if (confirmDelete) {
         await requestBase.delete(`targets/${id}`);
         console.log(`Target ${id} deletado.`);
-        getData(); // Atualizar os dados após exclusão
+        getData();
       }
     } catch (error) {
       console.error("Erro ao deletar o target:", error);
@@ -105,33 +105,76 @@ const App: React.FC = () => {
     try {
       await requestBase.delete(`todo/${id}`);
       console.log(`Todo ${id} deletado.`);
-      getData(); // Atualizar os dados após exclusão
+      getData();
     } catch (error) {
       console.error("Erro ao deletar o todo:", error);
     }
   };
 
-  
   const updateTarget = async () => {
     if (targetToEdit) {
       try {
-        // Enviar uma requisição PUT para atualizar o target
-        await requestBase.put(`targets/${targetToEdit.id}`, {
+        console.log(`Atualizando target com ID: ${targetToEdit.id}`);
+        console.log("Dados enviados:", {
           title: targetToEdit.title,
           description: targetToEdit.description,
           isComplete: targetToEdit.isComplete,
+          todo: targetToEdit.todos || [],
         });
+
+        await requestBase.put(
+          `https://todo-caio.azurewebsites.net/api/targets/${targetToEdit.id}`,
+          {
+            id: targetToEdit.id,
+            title: targetToEdit.title,
+            description: targetToEdit.description,
+            isComplete: targetToEdit.isComplete,
+            todo: targetToEdit.todos || [],
+          }
+        );
+
         console.log(`Target ${targetToEdit.id} atualizado com sucesso.`);
-        getData(); // Atualizar os dados após a edição
-        setTargetToEdit(null); // Limpar o formulário após o update
+        getData();
+        setTargetToEdit(null);
       } catch (error) {
-        console.error("Erro ao atualizar o target:", error);
+        if ((error as any).response) {
+          console.error(
+            "Erro ao atualizar o target:",
+            (error as any).response.data
+          );
+        } else {
+          console.error("Erro ao atualizar o target:", (error as any).message);
+        }
+      }
+    }
+  };
+
+  const updateTodo = async () => {
+    if (todoToEdit) {
+      try {
+        await requestBase.put(`todo/${todoToEdit.id}`, {
+          id: todoToEdit.id,
+          title: todoToEdit.title,
+          description: todoToEdit.description,
+          isComplete: todoToEdit.isComplete,
+          targetId: todoToEdit.targetId,
+        });
+
+        console.log(`Todo ${todoToEdit.id} atualizado com sucesso.`);
+        getData();
+        setTodoToEdit(null);
+      } catch (error) {
+        console.error("Erro ao atualizar o todo:", error);
       }
     }
   };
 
   const handleEditClick = (target: Target) => {
-    setTargetToEdit(target); // Definir o target a ser editado
+    setTargetToEdit(target);
+  };
+
+  const handleEditTodoClick = (todo: Todo) => {
+    setTodoToEdit(todo);
   };
 
   return (
@@ -210,6 +253,15 @@ const App: React.FC = () => {
                         <p>{todo.isComplete ? "Completo" : "Incompleto"}</p>
                         <button onClick={() => deleteTodo(todo.id)}>
                           Deletar Todo
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-primary"
+                          data-bs-toggle="modal"
+                          data-bs-target="#staticBackdrop"
+                          onClick={() => handleEditTodoClick(todo)}
+                        >
+                          Atualizar
                         </button>
                       </div>
                     ))}
@@ -299,6 +351,87 @@ const App: React.FC = () => {
                 type="button"
                 className="btn btn-primary"
                 onClick={updateTarget}
+                data-bs-dismiss="modal"
+              >
+                Salvar alterações
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        className="modal fade"
+        id="staticBackdrop"
+        data-bs-backdrop="static"
+        data-bs-keyboard="false"
+        tabIndex={-1}
+        aria-labelledby="staticBackdropLabel"
+        aria-hidden="true"
+      >
+        <div className="modal-dialog">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h1 className="modal-title fs-5" id="staticBackdropLabel">
+                Editar Todo
+              </h1>
+              <button
+                type="button"
+                className="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              ></button>
+            </div>
+            <div className="modal-body">
+              {todoToEdit && (
+                <div>
+                  <input
+                    type="text"
+                    value={todoToEdit.title}
+                    onChange={(e) =>
+                      setTodoToEdit({ ...todoToEdit, title: e.target.value })
+                    }
+                    placeholder="Editar título do Todo"
+                  />
+                  <input
+                    type="text"
+                    value={todoToEdit.description}
+                    onChange={(e) =>
+                      setTodoToEdit({
+                        ...todoToEdit,
+                        description: e.target.value,
+                      })
+                    }
+                    placeholder="Editar descrição do Todo"
+                  />
+                  <label>
+                    Completo:
+                    <input
+                      type="checkbox"
+                      checked={todoToEdit.isComplete}
+                      onChange={(e) =>
+                        setTodoToEdit({
+                          ...todoToEdit,
+                          isComplete: e.target.checked,
+                        })
+                      }
+                    />
+                  </label>
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                data-bs-dismiss="modal"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={updateTodo}
                 data-bs-dismiss="modal"
               >
                 Salvar alterações
